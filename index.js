@@ -1,3 +1,12 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve plugin manifest files
+app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
+
 import express from 'express';
 import dotenv from 'dotenv';
 import { checkTrademark } from './uspto.js';
