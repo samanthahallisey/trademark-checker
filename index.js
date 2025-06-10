@@ -1,19 +1,17 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Serve plugin manifest files
-app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
-
 import express from 'express';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { checkTrademark } from './uspto.js';
 
 dotenv.config();
 const app = express();
 app.use(express.json());
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
 
 app.post('/check', async (req, res) => {
   const { names } = req.body;
@@ -26,4 +24,4 @@ app.post('/check', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Trademark Checker API running on port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
