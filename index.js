@@ -8,9 +8,11 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
+// Enable __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Serve plugin files from .well-known
 app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
 
 app.post('/check', async (req, res) => {
@@ -25,3 +27,4 @@ app.post('/check', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+
