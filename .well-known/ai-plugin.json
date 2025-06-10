@@ -1,0 +1,17 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "USPTO Trademark Checker",
+  "name_for_model": "uspto_name_checker",
+  "description_for_human": "Checks if names are trademark-available in Class 43.",
+  "description_for_model": "Use this to validate if venue name ideas are available as trademarks under Class 43 (restaurant/bar names).",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://https://trademark-checker.onrender.com/.well-known/openapi.yaml"
+  },
+  "logo_url": "https://aurohotels.com/favicon.ico",
+  "contact_email": "shallisey@aurohotels.com",
+  "legal_info_url": "https://aurohotels.com/legal"
+}
