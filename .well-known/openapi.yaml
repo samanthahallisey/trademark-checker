@@ -2,10 +2,43 @@ openapi: 3.0.1
 info:
   title: USPTO Trademark Checker
   version: "1.0"
+  description: >
+    Generate venue name ideas from a concept prompt and check their trademark availability under USPTO Class 43 (restaurant/bar names).
+servers:
+  - url: https://trademark-checker.onrender.com
+
 paths:
+  /generate-names:
+    post:
+      summary: Generate venue name ideas
+      operationId: generateNames
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prompt:
+                  type: string
+                  example: "Upscale rooftop mezcal lounge in Austin with a desert-chic vibe"
+      responses:
+        '200':
+          description: A list of name suggestions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  names:
+                    type: array
+                    items:
+                      type: string
+
   /check:
     post:
-      summary: Check name availability
+      summary: Check trademark availability for name ideas
+      operationId: checkAvailability
       requestBody:
         required: true
         content:
@@ -17,9 +50,10 @@ paths:
                   type: array
                   items:
                     type: string
+                  example: ["Velvet Palm", "Sombra", "Casa Mezcal"]
       responses:
-        "200":
-          description: Trademark check results
+        '200':
+          description: List of available names
           content:
             application/json:
               schema:
@@ -32,5 +66,3 @@ paths:
                       properties:
                         name:
                           type: string
-                        isAvailable:
-                          type: boolean
