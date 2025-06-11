@@ -1,38 +1,40 @@
-import cors from 'cors';
-app.use(cors()); // Allow all origins by default
-
 import express from 'express';
+import cors from 'cors';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import axios from 'axios';
 import { checkTrademark } from './uspto.js';
 
 dotenv.config();
+
 const app = express();
+app.use(cors()); // Allow all origins
 app.use(express.json());
 
-// Enable __dirname in ES modules
+// Serve plugin files (.well-known)
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Serve plugin files from .well-known
 app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
 
+// Route: Trademark availability check
 app.post('/check', async (req, res) => {
   const { names } = req.body;
   if (!Array.isArray(names)) {
     return res.status(400).json({ error: "Missing 'names' array." });
   }
 
-  const results = await Promise.all(names.map(checkTrademark));
-  res.json({ available: results.filter(r => r.isAvailable) });
+  try {
+    const results = await Promise.all(names.map(checkTrademark));
+    res.json({ available: results.filter(r => r.isAvailable) });
+  } catch (err) {
+    console.error("Trademark check error:", err.message);
+    res.status(500).json({ error: "Trademark check failed." });
+  }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
-
-import axios from 'axios';
-
+// Route: GPT-powered name generation
 app.post('/generate-names', async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
@@ -61,10 +63,14 @@ app.post('/generate-names', async (req, res) => {
       .split("\n")
       .map(line => line.replace(/^[0-9\-\.\)]+\s*/, "").trim())
       .filter(n => n);
-    
+
     res.json({ names });
   } catch (err) {
     console.error("OpenAI API error:", err.message);
     res.status(500).json({ error: "Failed to generate names" });
   }
 });
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
