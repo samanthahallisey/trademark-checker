@@ -3,45 +3,79 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Trademark Checker</title>
+  <title>Venue Name Generator + Trademark Checker</title>
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
-    input, button, textarea { width: 100%; margin-top: 10px; padding: 10px; font-size: 16px; }
+    body { font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 20px; }
+    input, textarea, button { width: 100%; margin-top: 10px; padding: 10px; font-size: 16px; }
+    button { cursor: pointer; }
     ul { padding-left: 20px; }
+    .spinner { margin-top: 10px; font-style: italic; color: gray; }
   </style>
 </head>
 <body>
-  <h2>Trademark Name Checker</h2>
-  <p>Enter potential venue names below. We’ll tell you which ones are available under Class 43.</p>
-  <textarea id="names" rows="5" placeholder="Enter name ideas, one per line..."></textarea>
-  <button onclick="checkNames()">Check Availability</button>
-  <h3>Results:</h3>
+  <h2>Venue Name Generator + Trademark Checker</h2>
+  <p>Describe your restaurant, bar, or venue concept below:</p>
+  <textarea id="prompt" rows="4" placeholder="e.g. Cozy Italian wine bar in Charleston with vintage decor..."></textarea>
+  <button onclick="generateAndCheck()">Generate & Check</button>
+
+  <div id="status" class="spinner"></div>
+  <h3>Available Names:</h3>
   <div id="results"></div>
 
   <script>
-    async function checkNames() {
-      const raw = document.getElementById("names").value;
-      const names = raw.split('\n').map(n => n.trim()).filter(n => n);
+    async function generateNames(prompt) {
+      const res = await fetch("https://trademark-checker.onrender.com/generate-names", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt })
+      });
+      const data = await res.json();
+      return data.names || [];
+    }
 
-      const resBox = document.getElementById("results");
-      resBox.innerHTML = "Checking...";
+    async function checkNames(names) {
+      const res = await fetch("https://trademark-checker.onrender.com/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ names })
+      });
+      const data = await res.json();
+      return data.available || [];
+    }
+
+    async function generateAndCheck() {
+      const prompt = document.getElementById("prompt").value.trim();
+      const resultsDiv = document.getElementById("results");
+      const statusDiv = document.getElementById("status");
+      resultsDiv.innerHTML = "";
+      statusDiv.innerHTML = "Generating names...";
+
+      if (!prompt) {
+        statusDiv.innerHTML = "";
+        resultsDiv.innerHTML = "<p style='color: red;'>Please enter a prompt first.</p>";
+        return;
+      }
 
       try {
-        const res = await fetch("https://trademark-checker.onrender.com/check", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ names })
-        });
-        const data = await res.json();
-        const available = data.available || [];
+        const names = await generateNames(prompt);
+        if (!names.length) {
+          statusDiv.innerHTML = "";
+          resultsDiv.innerHTML = "<p>No names were generated. Try again.</p>";
+          return;
+        }
+
+        statusDiv.innerHTML = "Checking trademarks...";
+        const available = await checkNames(names);
+        statusDiv.innerHTML = "";
 
         if (available.length > 0) {
-          resBox.innerHTML = `<ul>${available.map(n => `<li>${n.name}</li>`).join('')}</ul>`;
+          resultsDiv.innerHTML = `<ul>${available.map(n => `<li>${n.name}</li>`).join("")}</ul>`;
         } else {
-          resBox.innerHTML = "<p>No available names found.</p>";
+          resultsDiv.innerHTML = "<p>No trademark-free names found. Try a new prompt.</p>";
         }
       } catch (err) {
-        resBox.innerHTML = `<p style="color:red;">Something went wrong. Try again later.</p>`;
+        statusDiv.innerHTML = "";
+        resultsDiv.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
       }
     }
   </script>
