@@ -59,10 +59,9 @@ app.post('/generate-names', async (req, res) => {
     );
 
     const raw = response.data.choices?.[0]?.message?.content || "";
-    const names = raw
-      .split("\n")
-      .map(line => line.replace(/^[0-9\-\.\)]+\s*/, "").trim())
-      .filter(n => n);
+const lines = raw.split(/\n+/).map(l => l.trim()).filter(Boolean);
+const names = lines.filter(line => /^[A-Za-z0-9\s\-\&']{3,}$/.test(line));
+
 
     res.json({ names });
   } catch (err) {
