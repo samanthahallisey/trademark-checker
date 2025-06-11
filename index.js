@@ -59,6 +59,8 @@ app.post('/generate-names', async (req, res) => {
     );
 
     const raw = response.data.choices?.[0]?.message?.content || "";
+    console.log("GPT response:\n", response.data.choices?.[0]?.message?.content);
+
 const lines = raw.split(/\n+/).map(l => l.trim()).filter(Boolean);
 const names = lines.filter(line => /^[A-Za-z0-9\s\-\&']{3,}$/.test(line));
 
