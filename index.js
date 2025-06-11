@@ -28,3 +28,40 @@ app.post('/check', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 
+import axios from 'axios';
+
+app.post('/generate-names', async (req, res) => {
+  const { prompt } = req.body;
+  if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+
+  try {
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: "gpt-4",
+        messages: [
+          { role: "system", content: "You are a creative brand strategist for restaurants and bars." },
+          { role: "user", content: `Generate 5 unique, memorable name ideas for this venue concept:\n\n"${prompt}"\n\nAvoid generic words like 'bar', 'grill', or 'cafe'. Return just the name ideas in a plain list.` }
+        ],
+        temperature: 0.8
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    const raw = response.data.choices?.[0]?.message?.content || "";
+    const names = raw
+      .split("\n")
+      .map(line => line.replace(/^[0-9\-\.\)]+\s*/, "").trim())
+      .filter(n => n);
+    
+    res.json({ names });
+  } catch (err) {
+    console.error("OpenAI API error:", err.message);
+    res.status(500).json({ error: "Failed to generate names" });
+  }
+});
