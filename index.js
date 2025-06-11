@@ -4,21 +4,23 @@ import dotenv from 'dotenv';
 import axios from 'axios';
 import { checkTrademark } from './uspto.js';
 
-dotenv.config();
-
-const app = express();
-app.use(cors()); // Allow all origins
-app.use(express.json());
-
-// Serve plugin files (.well-known)
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+dotenv.config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Setup __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Serve plugin manifest and spec files
 app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
 
-// Route: Trademark availability check
+// Trademark checking endpoint
 app.post('/check', async (req, res) => {
   const { names } = req.body;
   if (!Array.isArray(names)) {
@@ -34,7 +36,7 @@ app.post('/check', async (req, res) => {
   }
 });
 
-// Route: GPT-powered name generation
+// GPT-4o powered name generation
 app.post('/generate-names', async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
@@ -43,10 +45,16 @@ app.post('/generate-names', async (req, res) => {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "gpt-4",
+        model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are a creative brand strategist for restaurants and bars." },
-          { role: "user", content: `Generate 5 unique, memorable name ideas for this venue concept:\n\n"${prompt}"\n\nAvoid generic words like 'bar', 'grill', or 'cafe'. Return just the name ideas in a plain list.` }
+          {
+            role: "system",
+            content: "You are a creative brand strategist for restaurants and bars."
+          },
+          {
+            role: "user",
+            content: `Generate 5 unique, memorable name ideas for this venue concept:\n\n"${prompt}"\n\nAvoid generic words like 'bar', 'grill', or 'cafe'. Return just the name ideas in a plain list.`
+          }
         ],
         temperature: 0.8
       },
@@ -59,15 +67,15 @@ app.post('/generate-names', async (req, res) => {
     );
 
     const raw = response.data.choices?.[0]?.message?.content || "";
-    console.log("GPT response:\n", response.data.choices?.[0]?.message?.content);
+    console.log("GPT raw output:\n", raw); // ✅ Debug log
 
-const lines = raw.split(/\n+/).map(l => l.trim()).filter(Boolean);
-const names = lines.filter(line => /^[A-Za-z0-9\s\-\&']{3,}$/.test(line));
-
+    // Robust line cleanup
+    const lines = raw.split(/\n+/).map(l => l.trim()).filter(Boolean);
+    const names = lines.filter(line => /^[A-Za-z0-9\s\-\&']{3,}$/.test(line));
 
     res.json({ names });
   } catch (err) {
-    console.error("OpenAI API error:", err.message);
+    console.error("OpenAI API error:", err.response?.data || err.message);
     res.status(500).json({ error: "Failed to generate names" });
   }
 });
